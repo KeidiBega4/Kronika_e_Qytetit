@@ -1,0 +1,109 @@
+/* Full-screen background (same as register.css) */
+body.register-page,
+body.login-page {
+    min-height: 100vh;
+    margin: 0;
+    background: url("../img/televizora.jpg") center/cover no-repeat;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Blur + tint layer (same as register.css) */
+body.register-page::before,
+body.login-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    backdrop-filter: blur(12px);
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 0;
+}
+
+/* Centered form box (support both containers) */
+.register-container,
+.login-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    padding: 20px;
+    color: white;
+}
+
+/* Title */
+.register-container h2,
+.login-container h2 {
+    font-size: 34px;
+    margin-bottom: 25px;
+    font-weight: 700;
+    color: white;
+}
+
+/* Input wrapper */
+.input-group {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+/* Inputs (pill style) */
+.input-group input {
+    width: 93%;
+    padding: 14px;
+    border-radius: 999px;
+    border: 2px solid #fff;
+    background: transparent;
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+}
+
+.input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Main button (same as register button) */
+.register-btn,
+.login-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 999px;
+    border: none;
+    background: #fff;
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 15px;
+    margin-top: 5px;
+}
+
+
+
+/* Error message style that fits the design */
+.error-message,
+.error-box {
+    margin-bottom: 12px;
+    color: #ffb3b3; /* soft red on dark bg */
+    text-align: center;
+}
+
+
+.auth-links {
+
+    margin-top: 10px;
+    text-align: center;
+}
+
+.switch-text {
+    margin-bottom: 6px;
+}
+.switch-text,
+.register-container a,
+.login-container a{
+    color: white;
+}
+

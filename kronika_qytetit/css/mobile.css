@@ -1,0 +1,89 @@
+/* MOBILE STYLES (max-width: 768px) */
+@media (max-width: 768px) {
+
+    /* smaller navbar padding */
+    .navbar {
+        padding: 14px 20px;
+    }
+
+    /* show hamburger, hide desktop menu */
+    .menu-toggle {
+        display: block;
+        z-index: 1100;
+    }
+
+    /* make the menu a dropdown (hidden at first) */
+    .nav-links {
+        position: absolute;
+        top: 100%;           
+        left: 0;
+        width: 100%;
+        background: #000; 
+        opacity: 0.9;
+        flex-direction: column;
+        gap: 0;
+        display: none;       
+        border-top: transparent;
+        border-radius: 24px;
+    }
+
+    .nav-links li {
+        border-bottom:transparent;
+    }
+
+    .nav-links a {
+        color: #fff;         
+        width: 100%;
+        display: block;
+        padding: 12px 20px;
+    }
+    .nav-links a:hover{
+        background: #fff;
+        color: #000;
+    }
+
+    /* login button look on mobile */
+    .login-btn {
+        border-color: #000;
+        color: #000;
+    }
+
+    .login-btn:hover {
+        background: #fff;
+        color: #000 !important;
+    }
+
+    /* WHEN hamburger (checkbox) is checked → show dropdown */
+    .nav-toggle:checked ~ .nav-links {
+        display: flex;
+    }
+
+    /* animate hamburger into X */
+    .nav-toggle:checked + .menu-toggle span:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+    }
+    .nav-toggle:checked + .menu-toggle span:nth-child(2) {
+        opacity: 0;
+    }
+    .nav-toggle:checked + .menu-toggle span:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+    }
+
+    /* hero title smaller on mobile */
+    .hero-content h1 {
+        font-size: 34px;
+        letter-spacing: 1px;
+    }
+
+     .navbar.navbar-scrolled .nav-links {
+        background: #000 !important;   
+    }
+
+    .navbar.navbar-scrolled .nav-links a {
+        color: #e61616 !important;      
+    }
+    .navbar.navbar-scrolled .nav-links a.login-btn {
+    color: #fff !important;  /* white text for login only */
+    }
+    
+}

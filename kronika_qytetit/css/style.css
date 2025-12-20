@@ -1,0 +1,371 @@
+/* =========================
+   RESET / GLOBAL
+========================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    background: #000;
+    color: #fff;
+    min-height: 100vh;
+}
+
+/* =========================
+   HERO BACKGROUND
+========================= */
+.hero {
+    position: relative;
+    min-height: 100vh;
+    background-image: url("../img/Kronika_Qytetit_background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    color: #fff;
+    box-shadow: inset 0 0 250px rgba(0, 0, 0, 0.9);
+}
+
+/* dark overlay on top of background */
+.hero .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 0;
+}
+
+/* =========================
+   NAVBAR
+========================= */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+
+    padding: 20px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+    background: transparent;
+    transition: 
+        background-color 0.3s ease,
+        box-shadow 0.4s ease,
+        padding 0.3s ease,
+        color 0.3s ease;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 18px;
+    transition: 0.25s;
+}
+
+.nav-links a:hover {
+    color: black;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+section{
+    scroll-margin-top: 120px;
+}
+/* =========================
+   LOGIN BUTTON
+========================= */
+.login-btn {
+    display: inline-block;
+    padding: 8px 24px;
+    border-radius: 25px;
+    border: 2px solid white;
+    background: transparent;
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+/* Hover ONLY at the top */
+.login-btn:hover {
+    background: white;
+    color: black;
+}
+
+/* SCROLLED STATE — red button + white text */
+.navbar.navbar-scrolled .login-btn {
+    background: #e61616 !important;
+    border-color: #e61616 !important;
+    color: #fff !important;
+}
+
+/* No hover effect when scrolled */
+.navbar.navbar-scrolled .login-btn:hover {
+    background: #e61616;
+    color: #fff;
+}
+
+/* =========================
+   LOGO
+========================= */
+.logo a {
+    color: white;
+    font-size: 26px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+/* =========================
+   NAVBAR WHEN SCROLLED
+========================= */
+.navbar.navbar-scrolled {
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    padding: 10px 60px;
+}
+
+/* logo becomes dark when scrolled */
+.navbar.navbar-scrolled .logo a {
+    color: #111;
+}
+.navbar.navbar-scrolled .login-btn{
+    color: white;
+    background: red;
+}
+/* links become red when scrolled */
+.navbar.navbar-scrolled .nav-links a {
+    color: #e61616;
+ 
+}
+
+/* Hover when scrolled */
+.navbar.navbar-scrolled .nav-links a:hover {
+    color: #ff0000;
+}
+
+/* =========================
+   HAMBURGER MENU
+========================= */
+.nav-toggle {
+    display: none;
+}
+
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    z-index: 1100;
+}
+
+.menu-toggle span {
+    display: block;
+    width: 24px;
+    height: 2px;
+    margin: 5px 0;
+    background: #fff;
+    transition: 0.3s;
+}
+
+.navbar.navbar-scrolled .menu-toggle span {
+    background: #2b0d0d;
+    
+}
+
+
+/* =========================
+   HERO CONTENT
+========================= */
+.hero-content {
+    position: relative;
+    z-index: 1;
+    height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 0 20px;
+}
+
+/* TITLE */
+.hero-content h1 {
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    margin-bottom: 30px;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* MAIN BUTTON */
+.primary-btn {
+    display: inline-block;
+    padding: 14px 38px;
+    background: #e61616;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    transition: background 0.2s ease, transform 0.15s ease,
+                box-shadow 0.15s ease;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+.primary-btn:hover {
+    background: #ff2525;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.7);
+}
+
+/* =========================
+   SECTIONS
+========================= */
+body{
+    background: #fff;
+}
+
+.info-section {
+    width: 100%;
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 40px 20px;
+    background: #ffffff;
+    border-radius: 6px;
+    border-bottom: 1px solid #ddd;
+}
+.info-section p {
+    font-size: 15px;
+    color: #333;
+    line-height: 1.7;
+    margin: 10px 0;
+}
+.info-section h2 {
+    text-align: left;
+    font-size: 30px;
+    margin-bottom: 8px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #222;
+}
+
+.section-subtitle {
+    margin-top: 4px;
+    margin-bottom: 22px;
+    color: #666;
+    font-size: 15px;
+    font-style: italic;
+}
+
+/* Subtitle */
+.section-subtitle {
+    text-align: center;
+    margin-top: 8px;
+    margin-bottom: 30px;
+    color: #666;
+    font-size: 16px;
+}
+
+/* =========================
+   FAQ + FEEDBACK
+========================= */
+.faq-section .container,
+.feedback-section .container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.faq-item {
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #eee;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.faq-question {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: #ffffff;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.faq-toggle {
+    font-size: 20px;
+    line-height: 1;
+    transition: transform 0.2s;
+}
+
+.faq-answer {
+    display: none;
+    padding: 0 18px 14px;
+    border-top: 1px solid #f5f5f5;
+    font-size: 15px;
+    color: #444;
+}
+
+.faq-item.open .faq-answer {
+    display: block;
+}
+
+.faq-item.open .faq-toggle {
+    transform: rotate(45deg);
+}
+
+/* FEEDBACK FORM */
+.feedback-form {
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.feedback-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.feedback-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 15px;
+}
+
+.feedback-form button {
+    margin-top: 12px;
+    padding: 10px 24px;
+    border-radius: 20px;
+    border: none;
+    background: #d60000;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.feedback-form button:hover {
+    background: #b00000;
+}
