@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 login_user($user);
 
                 
-                header("Location: lajme.php");
+                header("Location: index.php");
                 exit;
             }
         }
@@ -90,9 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div class ="auth-links">
-            <p class="switch-text">
-                S’ke llogari? <a href="register.php">Regjistrohu</a>
-            </p>
+            <a href="lajme.php">← Back to news</a>
              <a href="index.php" class="back-home">Kthehu te faqja kryesore</a>
     
         </div>
