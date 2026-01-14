@@ -1,4 +1,6 @@
+
 <?php
+require_once __DIR__ . '/helper.php';
 $DB_HOST = 'localhost';
 $DB_USER = 'root';
 $DB_PASS = 'K3idib3g4..1.@';   

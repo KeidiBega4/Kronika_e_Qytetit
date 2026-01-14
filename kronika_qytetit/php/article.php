@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/helper.php';
 
-function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {

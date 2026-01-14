@@ -1,0 +1,4 @@
+<?php
+function h($v) {
+    return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+}

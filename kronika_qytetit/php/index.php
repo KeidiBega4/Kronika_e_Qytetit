@@ -1,8 +1,8 @@
 <?php
 // php/index.php
-require_once __DIR__ . '/config.php'; // must define $conn as mysqli
+require_once __DIR__ . '/config.php';
 
-function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+
 
 function rel_time($dt) {
     if (!$dt) return '';
@@ -22,24 +22,55 @@ function db_ok($conn) {
     return isset($conn) && ($conn instanceof mysqli) && $conn->connect_errno === 0;
 }
 
-/**
- * Safe base paths even if project folder changes.
- * Example:
- * - current script: /kronika_qytetit/php/index.php
- *   $PHP_BASE = /kronika_qytetit/php
- */
 $PHP_BASE  = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\'); // .../php
-
+$ROOT_BASE = rtrim(dirname($PHP_BASE), '/\\'); 
 function url_php($path) {
     global $PHP_BASE;
     $path = ltrim($path, '/');
     return $PHP_BASE . '/' . $path;
 }
 
+/**
+ * ✅ Load ALL navbar items from DB (no reserved filtering)
+ * ✅ De-duplicate
+ */
 function get_categories($conn) {
     if (!db_ok($conn)) return [];
-    $res = $conn->query("SELECT id, name, slug FROM categories ORDER BY id ASC");
-    return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+
+    $sql = "SELECT id, name, slug FROM categories ORDER BY id ASC";
+    $res = $conn->query($sql);
+    if (!$res) return [];
+
+    $rows = $res->fetch_all(MYSQLI_ASSOC);
+
+    $out = [];
+    $seenSlug = [];
+    $seenName = [];
+
+    foreach ($rows as $c) {
+        $id = (int)($c['id'] ?? 0);
+        $name = trim((string)($c['name'] ?? ''));
+        $slug = trim((string)($c['slug'] ?? ''));
+
+        if ($id <= 0 || $name === '') continue;
+
+        $nameKey = mb_strtolower($name, 'UTF-8');
+        $slugKey = mb_strtolower($slug, 'UTF-8');
+
+        if ($slugKey !== '' && isset($seenSlug[$slugKey])) continue;
+        if (isset($seenName[$nameKey])) continue;
+
+        if ($slugKey !== '') $seenSlug[$slugKey] = true;
+        $seenName[$nameKey] = true;
+
+        $out[] = [
+            'id' => $id,
+            'name' => $name,
+            'slug' => $slug,
+        ];
+    }
+
+    return $out;
 }
 
 function get_featured($conn, $limit = 6) {
@@ -95,11 +126,6 @@ function article_url($a) {
     return url_php("article.php?id=" . urlencode($a['id']));
 }
 
-/**
- * Accepts:
- * - ?c=sport  (slug)
- * - ?c=3      (id)
- */
 function find_selected_category(array $categories, string $cParam) {
     $cParam = trim($cParam);
     if ($cParam === '') return [null, null];
@@ -120,54 +146,95 @@ function find_selected_category(array $categories, string $cParam) {
     return [null, null];
 }
 
-$placeholder = "../img/placeholder.jpg"; // from /php -> ../img/
+/** ✅ slugs that should open a static page, not news */
+function is_static_page_slug(string $slug): bool {
+    return in_array($slug, ['rreth-nesh', 'feedback', 'kontakt'], true);
+}
+
+$placeholder = "../img/placeholder.jpg";
 
 $categories = get_categories($conn ?? null);
-if (!$categories) {
-    // fallback categories if DB is empty / not available
-    $categories = [
-        ['id'=>1,'name'=>'AKTUALITET','slug'=>'aktualitet'],
-        ['id'=>2,'name'=>'METROPOL','slug'=>'metropol'],
-        ['id'=>3,'name'=>'SPORT','slug'=>'sport'],
-        ['id'=>4,'name'=>'SHOWBIZ','slug'=>'showbiz'],
-    ];
-}
 
-$catParam = $_GET['c'] ?? '';
-[$selectedCat, $selectedCatId] = find_selected_category($categories, (string)$catParam);
-
-// Featured (always the same)
-$featured = get_featured($conn ?? null, 6);
-if (!$featured) {
-    $featured = [
-        ['id'=>1,'title'=>'Lajmi kryesor (featured) – vendos titullin këtu','image_path'=>$placeholder,'created_at'=>strtotime('-2 hours')],
-        ['id'=>2,'title'=>'Featured 2 – shembull titulli','image_path'=>$placeholder,'created_at'=>strtotime('-1 day')],
-        ['id'=>3,'title'=>'Featured 3 – shembull titulli','image_path'=>$placeholder,'created_at'=>strtotime('-1 day')],
-        ['id'=>4,'title'=>'Featured 4 – shembull titulli','image_path'=>$placeholder,'created_at'=>strtotime('-2 days')],
-        ['id'=>5,'title'=>'Featured 5 – shembull titulli','image_path'=>$placeholder,'created_at'=>strtotime('-2 days')],
-        ['id'=>6,'title'=>'Featured 6 – shembull titulli','image_path'=>$placeholder,'created_at'=>strtotime('-3 days')],
-    ];
-}
-
-// Latest changes when category selected
-$latest = get_latest($conn ?? null, 12, $selectedCatId);
-if (!$latest) $latest = $featured;
-
-// AKTUALITET block items
-$aktItems = [];
-if ($selectedCatId !== null) {
-    $aktItems = get_latest_by_category($conn ?? null, $selectedCatId, 8);
-} else {
-    $aktId = null;
+/**
+ * ✅ Default: if no ?c= provided, behave like "te-gjitha" if it exists
+ * (so your home loads normally)
+ */
+$catParam = (string)($_GET['c'] ?? '');
+if ($catParam === '') {
     foreach ($categories as $c) {
-        if (!empty($c['slug']) && $c['slug'] === 'aktualitet') { $aktId = (int)$c['id']; break; }
+        if (!empty($c['slug']) && $c['slug'] === 'te-gjitha') {
+            $catParam = 'te-gjitha';
+            break;
+        }
     }
-    $aktItems = $aktId ? get_latest_by_category($conn ?? null, $aktId, 8) : array_slice($latest, 0, 8);
 }
-if (!$aktItems) $aktItems = array_slice($latest, 0, 8);
 
-// Category sections to show: selected only, else all
-$catsToShow = $selectedCat ? [$selectedCat] : $categories;
+[$selectedCat, $selectedCatId] = find_selected_category($categories, $catParam);
+$selectedSlug = $selectedCat['slug'] ?? '';
+
+/** ✅ if te-gjitha -> treat as no filtering */
+if ($selectedSlug === 'te-gjitha') {
+    $selectedCat = null;
+    $selectedCatId = null;
+    $selectedSlug = '';
+}
+
+/** =========================
+ *  STATIC PAGE MODE
+ * ========================= */
+$isStaticPage = ($selectedSlug !== '' && is_static_page_slug($selectedSlug));
+
+/** ===== Normal homepage data (only when not static page) ===== */
+$featured = [];
+$latest = [];
+$aktItems = [];
+$catsToShow = [];
+
+if (!$isStaticPage) {
+    // ✅ Only DB content (NO hardcoded fallbacks)
+    $featured = get_featured($conn ?? null, 6);
+    $latest   = get_latest($conn ?? null, 12, $selectedCatId);
+
+    // ✅ AKTUALITET block items
+    if ($selectedCatId !== null) {
+        $aktItems = get_latest_by_category($conn ?? null, $selectedCatId, 8);
+    } else {
+        $aktId = null;
+        foreach ($categories as $c) {
+            if (!empty($c['slug']) && mb_strtolower($c['slug'], 'UTF-8') === 'aktualitet') {
+                $aktId = (int)$c['id'];
+                break;
+            }
+        }
+        $aktItems = $aktId ? get_latest_by_category($conn ?? null, $aktId, 8) : [];
+    }
+
+    // ✅ Category sections to show: selected only, else all (but skip static page slugs)
+    $catsToShow = [];
+    if ($selectedCat) {
+        $catsToShow = [$selectedCat];
+    } else {
+        foreach ($categories as $c) {
+            $slug = (string)($c['slug'] ?? '');
+            if ($slug !== '' && is_static_page_slug($slug)) continue;
+            if ($slug === 'te-gjitha') continue;
+            $catsToShow[] = $c;
+        }
+    }
+}
+
+/** ===== Feedback submission (demo) ===== */
+$feedback_ok = false;
+$feedback_err = '';
+if ($isStaticPage && $selectedSlug === 'feedback' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $msg = trim((string)($_POST['feedback'] ?? ''));
+    if ($msg === '') {
+        $feedback_err = 'Ju lutem shkruani një mesazh.';
+    } else {
+        // demo only (later you can save it to DB)
+        $feedback_ok = true;
+    }
+}
 
 ?><!doctype html>
 <html lang="sq">
@@ -182,34 +249,56 @@ $catsToShow = $selectedCat ? [$selectedCat] : $categories;
 <header class="topbar">
   <div class="topbar-inner">
 
-    <a href="<?= h(url_php('login.php')) ?>" class="login-icon" title="Staff Login">👤</a>
+    <a class="brand" href="<?= h(url_php('index.php?c=te-gjitha')) ?>">KRONIKA E QYTETIT</a>
 
-    <!-- ✅ brand always goes home -->
-    <a class="brand" href="<?= h(url_php('index.php')) ?>">KRONIKA E QYTETIT</a>
-
+    
     <nav class="nav">
-      <!-- ✅ tabs navigate through categories -->
-      <a class="nav-link<?= ($selectedCatId === null ? ' is-active' : '') ?>"
-         href="<?= h(url_php('index.php')) ?>">TË GJITHA</a>
-
       <?php foreach ($categories as $c): ?>
         <?php
-          $slugOrId = !empty($c['slug']) ? $c['slug'] : (string)$c['id'];
-          $active = ($selectedCatId !== null && (int)$c['id'] === (int)$selectedCatId);
+          $slug = trim((string)($c['slug'] ?? ''));
+          if ($slug === '') continue;
+          $active = ($catParam === $slug) || ($catParam === '' && $slug === 'te-gjitha');
         ?>
         <a class="nav-link<?= $active ? ' is-active' : '' ?>"
-           href="<?= h(url_php('index.php?c=' . urlencode($slugOrId))) ?>">
-           <?= h($c['name']) ?>
+           href="<?= h(url_php('index.php?c=' . urlencode($slug))) ?>">
+           <?= h(mb_strtoupper($c['name'], 'UTF-8')) ?>
         </a>
       <?php endforeach; ?>
-
-      <a class="nav-link" href="#rreth-nesh">RRETH NESH</a>
-      <a class="nav-link" href="#feedback">FEEDBACK</a>
-      <a class="nav-link" href="#kontakt">KONTAKT</a>
     </nav>
 
     <div class="actions">
-      <a class="btn" href="<?= h(url_php('login.php')) ?>">STAFF LOGIN</a>
+      <?php
+// ensure session is started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+?>
+
+<?php if (isset($_SESSION['user_id'])): ?>
+    <?php
+        $role = $_SESSION['user_role'] ?? '';
+        $dash = 'login.php';
+
+        if ($role === 'admin') {
+            $dash = 'admin/dashboard.php';
+        } elseif ($role === 'journalist') {
+            $dash = 'journalist/dashboard.php';
+        }
+    ?>
+    <a href="<?= h(url_php($dash)) ?>" title="Dashboard">
+        <img
+            src="../img/user.png"
+            alt="User"
+            style="width:40px;height:40px;border-radius:50%;cursor:pointer;object-fit:cover;"
+        >
+    </a>
+<?php else: ?>
+    <a href="<?= h(url_php('login.php')) ?>" class="login-staff-btn">
+        Login Staff
+    </a>
+<?php endif; ?>
+
+
     </div>
 
   </div>
@@ -217,12 +306,89 @@ $catsToShow = $selectedCat ? [$selectedCat] : $categories;
 
 <main class="wrap">
 
-  <!-- HERO GRID -->
+<?php if ($isStaticPage): ?>
+
+  <!-- ✅ STATIC PAGES (About / Feedback / Contact) -->
+  <section class="static-page">
+    <div class="static-card">
+
+      <?php if ($selectedSlug === 'rreth-nesh'): ?>
+        <h1>Rreth Nesh</h1>
+        <p class="static-subtitle">Kush jemi dhe çfarë bëjmë.</p>
+
+        <p>
+          <strong>Kronika e Qytetit</strong> është një portal informativ i dedikuar për
+          lajmet më të rëndësishme nga Tirana dhe qytetet e tjera.
+        </p>
+        <p>
+          Synimi ynë është të ofrojmë përditësime të shpejta, të qarta dhe të besueshme,
+          duke mbuluar aktualitetin, showbiz-in, sportin dhe teknologjinë.
+        </p>
+        <p>
+          Nëse keni sugjerime ose dëshironi të bashkëpunoni, na shkruani te faqja
+          <strong>Kontakt</strong>.
+        </p>
+
+      <?php elseif ($selectedSlug === 'feedback'): ?>
+        <h1>Feedback</h1>
+        <p class="static-subtitle">Na ndihmoni të përmirësohemi — mendimi juaj ka rëndësi.</p>
+
+        <?php if ($feedback_ok): ?>
+          <div class="static-alert success">Faleminderit! Mesazhi juaj u pranua (demo).</div>
+        <?php elseif ($feedback_err): ?>
+          <div class="static-alert error"><?= h($feedback_err) ?></div>
+        <?php endif; ?>
+
+        <form class="static-form" method="post" action="<?= h(url_php('index.php?c=feedback')) ?>">
+          <label for="feedback-text">Mesazhi juaj</label>
+          <textarea id="feedback-text" name="feedback" rows="6"
+            placeholder="Shkruaj këtu mendimin ose sugjerimin tënd..."><?= isset($_POST['feedback']) ? h($_POST['feedback']) : '' ?></textarea>
+
+          <div class="static-actions">
+            <button type="submit" class="static-btn">Dërgo</button>
+            <a class="static-btn secondary" href="<?= h(url_php('index.php?c=te-gjitha')) ?>">Kthehu</a>
+          </div>
+        </form>
+
+      <?php else: /* kontakt */ ?>
+        <h1>Kontakt</h1>
+        <p class="static-subtitle">Na kontakto për pyetje, bashkëpunime ose sugjerime.</p>
+
+        <div class="contact-grid">
+          <div class="contact-item">
+            <div class="contact-label">Email</div>
+            <div class="contact-value">info@kronikaqytetit.com</div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-label">Telefon</div>
+            <div class="contact-value">+355 69 734 3140</div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-label">Adresa</div>
+            <div class="contact-value">Tiranë, Shqipëri</div>
+          </div>
+        </div>
+
+        <div class="static-actions">
+          <a class="static-btn" href="<?= h(url_php('index.php?c=feedback')) ?>">Dërgo Feedback</a>
+          <a class="static-btn secondary" href="<?= h(url_php('index.php?c=te-gjitha')) ?>">Kthehu</a>
+        </div>
+
+      <?php endif; ?>
+
+    </div>
+  </section>
+
+<?php else: ?>
+
+  <!-- ✅ NORMAL HOMEPAGE / NEWS -->
   <section class="hero-grid">
 
-    <!-- LEFT: slider -->
     <div class="hero">
       <div class="hero-slider" id="heroSlider">
+  <?php if (empty($featured)): ?>
+        <div class="box" style="padding:16px;">Nuk ka artikuj featured ende.</div>
+      <?php else: ?>
         <?php foreach ($featured as $i => $a): ?>
           <a class="hero-slide<?= $i === 0 ? ' is-active' : '' ?>" href="<?= h(article_url($a)) ?>">
             <img src="<?= h(!empty($a['image_path']) ? $a['image_path'] : $placeholder) ?>" alt="<?= h($a['title']) ?>">
@@ -232,21 +398,21 @@ $catsToShow = $selectedCat ? [$selectedCat] : $categories;
             </div>
           </a>
         <?php endforeach; ?>
-      </div>
+      <?php endif; ?>
+    </div>
 
       <button class="hero-arrow left" type="button" id="heroPrev">‹</button>
       <button class="hero-arrow right" type="button" id="heroNext">›</button>
 
-      <div class="hero-dots" id="heroDots">
-        <?php foreach ($featured as $i => $a): ?>
-          <button class="dot<?= $i === 0 ? ' is-active' : '' ?>" type="button" data-i="<?= (int)$i ?>"></button>
-        <?php endforeach; ?>
-      </div>
+    <div class="hero-dots" id="heroDots">
+  <?php foreach ($featured as $i => $a): ?>
+    <button class="dot<?= $i === 0 ? ' is-active' : '' ?>" type="button" data-i="<?= (int)$i ?>"></button>
+  <?php endforeach; ?>
+</div>
+
     </div>
 
-    <!-- RIGHT: video + ad -->
     <aside class="hero-side">
-
       <div class="box">
         <div class="box-title">VIDEO</div>
         <div class="video">
@@ -257,25 +423,18 @@ $catsToShow = $selectedCat ? [$selectedCat] : $categories;
       <div class="box ad">
         <div class="ad-ph">REKLAMË</div>
       </div>
-
     </aside>
+
   </section>
 
-  <!-- AD BANNER ROW -->
   <section class="ad-row">
     <div class="ad-banner">BANNER REKLAMË (970x90)</div>
   </section>
 
-  <!-- SECTION: "AKTUALITET style" -->
   <section class="section">
     <div class="section-head">
-      <h2><?= h($selectedCat ? $selectedCat['name'] : 'AKTUALITET') ?></h2>
-
-      <?php if ($selectedCat): ?>
-        <a class="more" href="<?= h(url_php('index.php')) ?>">Të gjitha</a>
-      <?php else: ?>
-        <a class="more" href="<?= h(url_php('index.php?c=aktualitet')) ?>">Më shumë</a>
-      <?php endif; ?>
+      <h2>AKTUALITET</h2>
+      <a class="more" href="<?= h(url_php('index.php?c=aktualitet')) ?>">Më shumë</a>
     </div>
 
     <div class="akt-grid">
@@ -284,6 +443,9 @@ $catsToShow = $selectedCat ? [$selectedCat] : $categories;
         $big2 = $aktItems[1] ?? null;
         $rest = array_slice($aktItems, 2, 6);
       ?>
+      <?php if (empty($aktItems)): ?>
+        <div class="box" style="padding:16px;">Nuk ka lajme në Aktualitet ende.</div>
+      <?php endif; ?>
 
       <div class="akt-big">
         <?php if ($big1): ?>
@@ -319,115 +481,89 @@ $catsToShow = $selectedCat ? [$selectedCat] : $categories;
     </div>
   </section>
 
-  <!-- CATEGORY SECTIONS -->
   <?php foreach ($catsToShow as $idx => $c): ?>
     <?php
       $items = get_latest_by_category($conn ?? null, (int)$c['id'], 8);
-      if (!$items) $items = array_slice($latest, 0, 8);
       $bg = ($idx % 2 === 1) ? ' alt' : '';
       $slugOrId = !empty($c['slug']) ? $c['slug'] : (string)$c['id'];
     ?>
     <section class="section<?= $bg ?>">
       <div class="section-head">
-        <h2><?= h($c['name']) ?></h2>
-        <?php if ($selectedCat): ?>
-          <a class="more" href="<?= h(url_php('index.php')) ?>">Të gjitha</a>
-        <?php else: ?>
-          <a class="more" href="<?= h(url_php('index.php?c=' . urlencode($slugOrId))) ?>">Më shumë</a>
-        <?php endif; ?>
+        <h2><?= h(mb_strtoupper($c['name'], 'UTF-8')) ?></h2>
+        <a class="more" href="<?= h(url_php('index.php?c=' . urlencode($slugOrId))) ?>">Më shumë</a>
       </div>
 
       <div class="cards-row">
-        <?php foreach ($items as $a): ?>
+       <?php if (empty($items)): ?>
+          <div class="box" style="padding:16px;">
+            Nuk ka lajme në këtë kategori ende.
+          </div>
+      <?php else: ?>
+        <div class="cards-row">
+          <?php foreach ($items as $a): ?>
           <a class="card" href="<?= h(article_url($a)) ?>">
-            <img src="<?= h(!empty($a['image_path']) ? $a['image_path'] : $placeholder) ?>" alt="">
-            <div class="card-title"><?= h($a['title']) ?></div>
-            <div class="card-meta"><?= h(rel_time($a['created_at'] ?? null)) ?></div>
-          </a>
-        <?php endforeach; ?>
-      </div>
-    </section>
-  <?php endforeach; ?>
+              <img src="<?= h(!empty($a['image_path']) ? $a['image_path'] : $placeholder) ?>" alt="">
+              <div class="card-title"><?= h($a['title']) ?></div>
+              <div class="card-meta"><?= h(rel_time($a['created_at'] ?? null)) ?></div>
+            </a>
+           <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+      </section>
+      <?php endforeach; ?>
 
-  <!-- ABOUT / FEEDBACK / CONTACT AT BOTTOM -->
-  <section id="rreth-nesh" class="info-section">
-    <div class="container">
-      <h2>Rreth Kronika e Qytetit</h2>
-      <p class="section-subtitle">
-        Portali yt për lajmet më të rëndësishme nga Tirana dhe qytetet e tjera.
-      </p>
-      <p>
-        <strong>Kronika e Qytetit</strong> është një portal informativ i dedikuar
-        për lajmet dhe kronikat më të rëndësishme të përditshme. Misioni ynë është
-        të sjellim informacion të shpejtë, të verifikuar dhe të besueshëm për publikun.
-      </p>
-      <p>
-        Ne mbulojmë tema nga kronika, politika, komuniteti, kultura dhe zhvillimet
-        sociale, duke vendosur në qendër qytetarin dhe historitë e tij.
-      </p>
-    </div>
-  </section>
+  <script>
+  (function(){
+    const slides = Array.from(document.querySelectorAll(".hero-slide"));
+    const dots = Array.from(document.querySelectorAll("#heroDots .dot"));
+    const prev = document.getElementById("heroPrev");
+    const next = document.getElementById("heroNext");
+    if (!slides.length) return;
 
-  <section id="feedback" class="info-section feedback-section">
-    <div class="container">
-      <h2>Feedback nga lexuesit</h2>
-      <p class="section-subtitle">
-        Na trego çfarë mendon për Kronika e Qytetit – mendimi yt na ndihmon të përmirësohemi.
-      </p>
+    let i = 0;
+    function show(n){
+      slides[i].classList.remove("is-active");
+      dots[i] && dots[i].classList.remove("is-active");
+      i = (n + slides.length) % slides.length;
+      slides[i].classList.add("is-active");
+      dots[i] && dots[i].classList.add("is-active");
+    }
+    prev && prev.addEventListener("click", ()=>show(i-1));
+    next && next.addEventListener("click", ()=>show(i+1));
+    dots.forEach(d => d.addEventListener("click", ()=>show(parseInt(d.dataset.i,10)||0)));
+    setInterval(()=>show(i+1), 6000);
+  })();
+  </script>
 
-      <form class="feedback-form" action="#" method="post"
-            onsubmit="alert('Faleminderit! (Ruajtja në DB do shtohet më vonë)'); return false;">
-        <label for="feedback-text">Mesazhi juaj</label>
-        <textarea id="feedback-text" name="feedback" rows="5"
-          placeholder="Shkruaj këtu mendimin ose sugjerimin tënd..."></textarea>
-
-        <button type="submit">Dërgo Feedback</button>
-      </form>
-    </div>
-  </section>
-
-  <section id="kontakt" class="info-section contact-section">
-    <div class="container">
-      <h2>Na kontakto</h2>
-      <p class="section-subtitle">
-        Për bashkëpunime, informacione shtesë ose raportime nga terreni.
-      </p>
-
-      <div class="contact-details">
-        <p><strong>Email:</strong> info@kronikaqytetit.com</p>
-        <p><strong>Telefon:</strong> 069 734 3140</p>
-        <p><strong>Adresa:</strong> Tiranë, Shqipëri</p>
-      </div>
-    </div>
-  </section>
+<?php endif; ?>
 
 </main>
 
-<script>
-(function(){
-  const slides = Array.from(document.querySelectorAll(".hero-slide"));
-  const dots = Array.from(document.querySelectorAll("#heroDots .dot"));
-  const prev = document.getElementById("heroPrev");
-  const next = document.getElementById("heroNext");
-  if (!slides.length) return;
 
-  let i = 0;
+<footer class="site-footer">
+    <div class="footer-inner">
 
-  function show(n){
-    slides[i].classList.remove("is-active");
-    dots[i] && dots[i].classList.remove("is-active");
-    i = (n + slides.length) % slides.length;
-    slides[i].classList.add("is-active");
-    dots[i] && dots[i].classList.add("is-active");
-  }
+        <div class="footer-section">
+            <h3>Rreth Nesh</h3>
+            <p>
+                Kronika e Qytetit është një portal informativ që synon të ofrojë
+                lajme të sakta, të shpejta dhe të besueshme për publikun.
+            </p>
+        </div>
 
-  prev && prev.addEventListener("click", ()=>show(i-1));
-  next && next.addEventListener("click", ()=>show(i+1));
-  dots.forEach(d => d.addEventListener("click", ()=>show(parseInt(d.dataset.i,10)||0)));
+        <div class="footer-section">
+            <h3>Kontakt</h3>
+            <p><strong>Email:</strong> info@kronikaqytetit.al</p>
+            <p><strong>Telefon:</strong> +355 69 123 4567</p>
+            <p><strong>Adresa:</strong> Tiranë, Shqipëri</p>
+        </div>
 
-  setInterval(()=>show(i+1), 6000);
-})();
-</script>
-
+    </div>
+    <div class="footer-bottom">
+        © <?php echo date('Y'); ?> Kronika e Qytetit. Të gjitha të drejtat e rezervuara.
+    </div>
+</footer>
+          
 </body>
 </html>
+ 
