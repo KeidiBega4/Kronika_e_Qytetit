@@ -6,7 +6,12 @@ require_once __DIR__ . '/../config.php';
 $page_title = "Create Article";
 $sidebar_file = __DIR__ . '/_sidebar_journalist.php';
 
-$catRes = $conn->query("SELECT id, name FROM categories ORDER BY name ASC");
+$catRes = $conn->query("
+  SELECT id, name 
+  FROM categories 
+  WHERE name NOT IN ('Te gjitha', 'Rreth Nesh')
+  ORDER BY name ASC
+");
 $categories = $catRes ? $catRes->fetch_all(MYSQLI_ASSOC) : [];
 
 $errors = [];
