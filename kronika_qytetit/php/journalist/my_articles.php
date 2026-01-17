@@ -142,7 +142,7 @@ ob_start();
             <td>
               <div class="jp-title-row">
                 <?php if (!empty($a['image_path'])): ?>
-                  <img class="jp-thumb" src="../../<?= h($a['image_path']) ?>" alt="">
+                  <img class="jp-thumb" src="../../img/uploads/<?= h(basename($a['image_path'])) ?>" alt="">
                 <?php endif; ?>
                 <div><?= h($a['title']) ?></div>
               </div>

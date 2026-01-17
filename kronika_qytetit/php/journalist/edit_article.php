@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $targetPath = $uploadDir . $filename;
         if (move_uploaded_file($tmp, $targetPath)) {
-          $imagePath = 'img/uploads/' . $filename;
+          $imagePath = '../img/uploads/' . $filename;
         } else {
           $errors[] = 'Image upload failed.';
         }

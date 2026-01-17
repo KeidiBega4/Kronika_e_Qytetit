@@ -89,26 +89,33 @@ function get_featured($conn, $limit = 6) {
     return $rows;
 }
 
-function get_latest($conn, $limit = 10, $catId = null) {
+function get_latest($conn, $limit = null, $catId = null) {
     if (!db_ok($conn)) return [];
 
     if ($catId !== null) {
         $sql = "SELECT id, title, slug, image_path, created_at
                 FROM articles
                 WHERE status='published' AND category_id=?
-                ORDER BY created_at DESC
-                LIMIT ?";
-        $stmt = $conn->prepare($sql);
-        if (!$stmt) return [];
-        $stmt->bind_param("ii", $catId, $limit);
+                ORDER BY created_at DESC";
     } else {
         $sql = "SELECT id, title, slug, image_path, created_at
                 FROM articles
                 WHERE status='published'
-                ORDER BY created_at DESC
-                LIMIT ?";
-        $stmt = $conn->prepare($sql);
-        if (!$stmt) return [];
+                ORDER BY created_at DESC";
+    }
+
+    if ($limit !== null) {
+        $sql .= " LIMIT ?";
+    }
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) return [];
+
+    if ($catId !== null && $limit !== null) {
+        $stmt->bind_param("ii", $catId, $limit);
+    } elseif ($catId !== null) {
+        $stmt->bind_param("i", $catId);
+    } elseif ($limit !== null) {
         $stmt->bind_param("i", $limit);
     }
 
@@ -193,7 +200,7 @@ $catsToShow = [];
 if (!$isStaticPage) {
     // ✅ Only DB content (NO hardcoded fallbacks)
     $featured = get_featured($conn ?? null, 6);
-    $latest   = get_latest($conn ?? null, 12, $selectedCatId);
+    $latest = get_latest($conn ?? null, null, $selectedCatId);
 
     // ✅ AKTUALITET block items
     if ($selectedCatId !== null) {
@@ -236,7 +243,25 @@ if ($isStaticPage && $selectedSlug === 'feedback' && $_SERVER['REQUEST_METHOD'] 
     }
 }
 
-?><!doctype html>
+$cat_articles = [];
+
+if (!$isStaticPage) {
+    foreach ($catsToShow as $c) {
+        $cat_articles[] = [
+            'info' => $c,
+            'articles' => get_latest_by_category(
+                $conn ?? null,
+                (int)$c['id'],
+                8
+            )
+        ];
+    }
+}
+
+
+?>
+
+<!doctype html>
 <html lang="sq">
 <head>
   <meta charset="utf-8" />
@@ -249,9 +274,8 @@ if ($isStaticPage && $selectedSlug === 'feedback' && $_SERVER['REQUEST_METHOD'] 
 <header class="topbar">
   <div class="topbar-inner">
 
-    <a class="brand" href="<?= h(url_php('index.php?c=te-gjitha')) ?>">KRONIKA E QYTETIT</a>
+    <a class="brand" href="<?= h(url_php('index.php')) ?>">KRONIKA E QYTETIT</a>
 
-    
     <nav class="nav">
       <?php foreach ($categories as $c): ?>
         <?php
@@ -259,8 +283,8 @@ if ($isStaticPage && $selectedSlug === 'feedback' && $_SERVER['REQUEST_METHOD'] 
           if ($slug === '') continue;
           $active = ($catParam === $slug) || ($catParam === '' && $slug === 'te-gjitha');
         ?>
-        <a class="nav-link<?= $active ? ' is-active' : '' ?>"
-           href="<?= h(url_php('index.php?c=' . urlencode($slug))) ?>">
+        <a class="nav-link"
+            href="<?= h(url_php('category.php?slug=' . urlencode($slug))) ?>">
            <?= h(mb_strtoupper($c['name'], 'UTF-8')) ?>
         </a>
       <?php endforeach; ?>
@@ -434,7 +458,7 @@ if (session_status() === PHP_SESSION_NONE) {
   <section class="section">
     <div class="section-head">
       <h2>AKTUALITET</h2>
-      <a class="more" href="<?= h(url_php('index.php?c=aktualitet')) ?>">Më shumë</a>
+      <a class="more" href="<?= h(url_php('category.php?slug=aktualitet')) ?>">Më shumë</a>
     </div>
 
     <div class="akt-grid">
@@ -481,36 +505,39 @@ if (session_status() === PHP_SESSION_NONE) {
     </div>
   </section>
 
-  <?php foreach ($catsToShow as $idx => $c): ?>
-    <?php
-      $items = get_latest_by_category($conn ?? null, (int)$c['id'], 8);
-      $bg = ($idx % 2 === 1) ? ' alt' : '';
-      $slugOrId = !empty($c['slug']) ? $c['slug'] : (string)$c['id'];
-    ?>
-    <section class="section<?= $bg ?>">
-      <div class="section-head">
-        <h2><?= h(mb_strtoupper($c['name'], 'UTF-8')) ?></h2>
-        <a class="more" href="<?= h(url_php('index.php?c=' . urlencode($slugOrId))) ?>">Më shumë</a>
-      </div>
+  <?php foreach ($cat_articles as $idx => $block): ?>
+  <?php
+    $c = $block['info'];
+    $items = $block['articles'];
+    $bg = ($idx % 2 === 1) ? ' alt' : '';
+    $slugOrId = !empty($c['slug']) ? $c['slug'] : (string)$c['id'];
+  ?>
+  <section class="section<?= $bg ?>">
+    <div class="section-head">
+      <h2><?= h(mb_strtoupper($c['name'], 'UTF-8')) ?></h2>
+      <a class="more" href="<?= h(url_php('category.php?slug=' . urlencode($c['slug']))) ?>">
+        Më shumë
+      </a>
+    </div>
 
+    <?php if (empty($items)): ?>
+      <div class="box" style="padding:16px;">
+        Nuk ka lajme në këtë kategori ende.
+      </div>
+    <?php else: ?>
       <div class="cards-row">
-       <?php if (empty($items)): ?>
-          <div class="box" style="padding:16px;">
-            Nuk ka lajme në këtë kategori ende.
-          </div>
-      <?php else: ?>
-        <div class="cards-row">
-          <?php foreach ($items as $a): ?>
+        <?php foreach ($items as $a): ?>
           <a class="card" href="<?= h(article_url($a)) ?>">
-              <img src="<?= h(!empty($a['image_path']) ? $a['image_path'] : $placeholder) ?>" alt="">
-              <div class="card-title"><?= h($a['title']) ?></div>
-              <div class="card-meta"><?= h(rel_time($a['created_at'] ?? null)) ?></div>
-            </a>
-           <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
-      </section>
-      <?php endforeach; ?>
+            <img src="<?= h(!empty($a['image_path']) ? $a['image_path'] : $placeholder) ?>" alt="">
+            <div class="card-title"><?= h($a['title']) ?></div>
+            <div class="card-meta"><?= h(rel_time($a['created_at'] ?? null)) ?></div>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+  </section>
+<?php endforeach; ?>
+
 
   <script>
   (function(){

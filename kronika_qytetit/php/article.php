@@ -36,9 +36,75 @@ $placeholder = "../img/placeholder.jpg";
   <title><?= h($a['title']) ?> - Kronika e Qytetit</title>
   <link rel="stylesheet" href="../css/lajme.css">
   <style>
-    .article-wrap{max-width:900px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden}
-    .article-body{padding:18px 18px 26px}
-    .article-meta{opacity:.7;margin-top:6px}
+    .article-wrap {
+      max-width: 900px;
+      margin: 20px auto;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+    
+    .article-hero-img {
+      width: 100%;
+      height: 400px;
+      object-fit: cover;
+      display: block;
+    }
+    
+    @media (max-width: 768px) {
+      .article-hero-img {
+        height: 280px;
+      }
+    }
+    
+    .article-body {
+      padding: 24px 28px 32px;
+    }
+    
+    .article-body h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1.2;
+      color: #111;
+    }
+    
+    .article-meta {
+      opacity: 0.7;
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .article-content {
+      line-height: 1.7;
+      font-size: 16px;
+      color: #333;
+    }
+    
+    .article-content p {
+      margin: 16px 0;
+    }
+    
+    .back-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 20px;
+      background: #1f4f7a;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(31, 79, 122, 0.2);
+    }
+    
+    .back-btn:hover {
+      background: #164060;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(31, 79, 122, 0.3);
+    }
   </style>
 </head>
 <body>
@@ -48,32 +114,36 @@ $placeholder = "../img/placeholder.jpg";
     <a class="brand" href="index.php">KRONIKA E QYTETIT</a>
     <nav class="nav">
       <?php if (!empty($a['category_slug'])): ?>
-        <a class="nav-link" href="category.php?c=<?= h($a['category_slug']) ?>"><?= h($a['category_name']) ?></a>
+        <a class="nav-link" href="index.php?c=<?= h($a['category_slug']) ?>"><?= h(mb_strtoupper($a['category_name'], 'UTF-8')) ?></a>
       <?php endif; ?>
-      <a class="nav-link" href="kontakt.php">Kontakt</a>
-      <a class="nav-link" href="feedback.php">Feedback</a>
-      <a class="nav-link" href="rrethnesh.php">Rreth nesh</a>
+      <a class="nav-link" href="index.php?c=rreth-nesh">RRETH NESH</a>
+      <a class="nav-link" href="index.php?c=feedback">FEEDBACK</a>
+      <a class="nav-link" href="index.php?c=kontakt">KONTAKT</a>
     </nav>
   </div>
 </header>
 
 <main class="wrap">
   <div class="article-wrap">
-    <img src="<?= h($a['image_path'] ?: $placeholder) ?>" alt="<?= h($a['title']) ?>" style="width:100%;display:block">
+    <img 
+      class="article-hero-img"
+      src="<?= h($a['image_path'] ?: $placeholder) ?>" 
+      alt="<?= h($a['title']) ?>"
+    >
     <div class="article-body">
-      <h1 style="margin:0"><?= h($a['title']) ?></h1>
+      <h1><?= h($a['title']) ?></h1>
       <div class="article-meta">
-        <?= h($a['category_name'] ?? '') ?> • <?= h($a['created_at'] ?? '') ?>
+        <?= h($a['category_name'] ?? '') ?> • <?= h(date('d.m.Y H:i', strtotime($a['created_at'] ?? 'now'))) ?>
       </div>
-      <hr style="margin:14px 0;opacity:.2">
-      <div style="line-height:1.65">
+      <hr style="margin: 18px 0; opacity: 0.15; border: none; border-top: 2px solid #ddd">
+      <div class="article-content">
         <?= nl2br(h($a['content'] ?? '')) ?>
       </div>
     </div>
   </div>
 
-  <div style="margin-top:16px">
-    <a class="nav-link" style="background:#1f4f7a" href="index.php">← Kthehu te lajmet</a>
+  <div>
+    <a class="back-btn" href="index.php">← Kthehu te lajmet</a>
   </div>
 </main>
 
