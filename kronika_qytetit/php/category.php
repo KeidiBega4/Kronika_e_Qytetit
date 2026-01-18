@@ -1,7 +1,14 @@
 <?php
 // php/category.php
 require_once __DIR__ . '/config.php';
+if (($_GET['slug'] ?? '') === 'te-gjitha') {
+    header('Location: index.php');
+    exit;
+}
 
+$categories = [];
+$res = $conn->query("SELECT id, name, slug FROM categories ORDER BY id ASC");
+if ($res) $categories = $res->fetch_all(MYSQLI_ASSOC);
 /* =========================
    Helpers
 ========================= */
@@ -177,6 +184,19 @@ $stmt->close();
 <header class="topbar">
   <div class="topbar-inner">
     <a class="brand" href="<?= h(url_php('index.php')) ?>">KRONIKA E QYTETIT</a>
+      <nav class="nav">
+      <?php foreach ($categories as $c): ?>
+        <a class="nav-link"
+           href="<?= h(url_php('category.php?slug=' . urlencode($c['slug']))) ?>">
+          <?= h(mb_strtoupper($c['name'], 'UTF-8')) ?>
+        </a>
+      <?php endforeach; ?>
+
+      <a class="nav-link" href="<?= h(url_php('rreth-nesh.php')) ?>">
+        RRETH NESH
+      </a>
+    </nav>
+  
   </div>
 </header>
 

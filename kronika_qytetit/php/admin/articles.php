@@ -99,6 +99,9 @@ ob_start();
         <td><?= badge($st) ?></td>
 
         <td>
+          <!-- ✅ Only change: add View link -->
+          <a class="btn" href="../article.php?id=<?= (int)$r['id'] ?>">View</a>
+
           <?php if ($st === 'pending'): ?>
             <!-- ✅ Only show approve/reject when pending -->
             <form method="post" style="display:inline;">

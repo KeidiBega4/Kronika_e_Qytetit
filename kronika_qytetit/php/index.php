@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__ . '/config.php';
 
+if (($_GET['slug'] ?? '') === 'te-gjitha') {
+    header('Location: index.php');
+    exit;
+}
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -168,6 +172,9 @@ foreach ($categories as $c) {
           <?= h(mb_strtoupper($c['name'], 'UTF-8')) ?>
         </a>
       <?php endforeach; ?>
+        <a class="nav-link" href="<?= h(url_php('rreth-nesh.php')) ?>">
+            RRETH NESH  
+        </a>
     </nav>
     <div class="actions">
   <?php if (!empty($_SESSION['user_id'])): ?>
