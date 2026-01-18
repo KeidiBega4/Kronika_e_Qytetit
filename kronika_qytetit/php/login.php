@@ -91,13 +91,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="login.php">
+        <form method="POST" action="login.php" autocomplete="off">
             <div class="input-group">
-                <input type="email" name="email" placeholder="Email address" required>
+                <input
+                type="email"
+                name="email"
+                placeholder="Email address"
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+                required
+                >
             </div>
 
             <div class="input-group">
-                <input type="password" name="password" placeholder="Password" required>
+                <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                autocomplete="new-password"
+                required
+                >
             </div>
 
             <button type="submit" class="register-btn">Hyr</button>

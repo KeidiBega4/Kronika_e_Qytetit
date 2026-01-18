@@ -3,7 +3,7 @@
 require_once __DIR__ . '/helper.php';
 $DB_HOST = 'localhost';
 $DB_USER = 'root';
-$DB_PASS = 'K3idib3g4..1.@';   
+$DB_PASS = '';   //K3idib3g4..1.@
 $DB_NAME = 'news_portal';     
 
 $mysqli = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);

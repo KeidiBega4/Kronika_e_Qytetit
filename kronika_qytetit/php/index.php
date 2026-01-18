@@ -176,6 +176,21 @@ foreach ($categories as $c) {
             RRETH NESH  
         </a>
     </nav>
+
+    <div class="search-box">
+      <form action="<?= h(url_php('search.php')) ?>" method="GET">
+        <input
+          type="text"
+          name="q"
+          placeholder="Kërko lajme..."
+          required
+        >
+        <button type="submit" aria-label="Search">
+          🔍
+        </button>
+      </form>
+    </div>
+
     <div class="actions">
   <?php if (!empty($_SESSION['user_id'])): ?>
 
@@ -282,6 +297,11 @@ foreach ($categories as $c) {
 
   </div>
 </section>
+
+<!-- HORIZONTAL AD -->
+<div class="ad-row horizontal-ad">
+  <img src="../img/ads/banner-5.png" alt="Advertisement">
+</div>
 
 <!-- =========================
      CATEGORY SECTIONS
