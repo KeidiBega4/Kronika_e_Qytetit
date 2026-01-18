@@ -38,6 +38,28 @@ function article_url($a) {
 }
 
 /* =========================
+   BREAKING NEWS (TEKNOLOGJI)
+========================= */
+
+$breakingNews = null;
+
+$sql = "
+  SELECT a.id, a.title, a.created_at
+  FROM articles a
+  INNER JOIN categories c ON c.id = a.category_id
+  WHERE a.status = 'published'
+    AND c.slug = 'teknologji'
+  ORDER BY a.created_at DESC
+  LIMIT 1
+";
+
+$res = $conn->query($sql);
+if ($res && $res->num_rows > 0) {
+  $breakingNews = $res->fetch_assoc();
+}
+
+
+/* =========================
    DATA FETCH
 ========================= */
 
@@ -106,8 +128,34 @@ foreach ($categories as $c) {
   <title>Kronika e Qytetit</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="../css/lajme.css?v=reset1">
+  <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
+
+<!-- TOP INFO BAR -->
+<div class="top-info-bar">
+  <div class="top-info-inner">
+
+    <div class="date-weather">
+      <span class="current-date">
+        <?= date("l, F j, Y"); ?>
+      </span>
+      <span class="weather">
+        18°C Tiranë
+        <i class="fas fa-cloud-sun"></i>
+      </span>
+    </div>
+
+    <div class="social-links">
+      <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+      <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+      <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+      <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+    </div>
+
+  </div>
+</div>
 
 <header class="topbar">
   <div class="topbar-inner">
@@ -154,6 +202,26 @@ foreach ($categories as $c) {
 
   </div>
 </header>
+
+<?php if ($breakingNews): ?>
+<div class="breaking-news">
+  <div class="breaking-inner">
+
+    <div class="breaking-title">
+      BREAKING
+    </div>
+
+    <div class="breaking-content">
+      <div class="breaking-marquee">
+        <a href="<?= h(url_php('article.php?id=' . $breakingNews['id'])) ?>">
+          <?= h($breakingNews['title']) ?>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+<?php endif; ?>
 
 <main class="wrap">
 

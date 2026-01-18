@@ -1452,3 +1452,134 @@ a { color: inherit; }
   background: rgba(0, 0, 0, 0.65);
   transform: translateY(-50%) scale(1.1);
 }
+/* =========================
+   TOP INFO BAR
+========================= */
+
+.top-info-bar {
+  background: #0f3c63;
+  color: #e6eef5;
+  font-size: 13px;
+}
+
+.top-info-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.date-weather {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  font-weight: 600;
+}
+
+.date-weather i {
+  margin-left: 6px;
+  color: #ffd166;
+}
+
+.social-links {
+  display: flex;
+  gap: 14px;
+}
+
+.social-links a {
+  color: #e6eef5;
+  text-decoration: none;
+  font-size: 14px;
+  opacity: 0.9;
+  transition: all 0.2s ease;
+}
+
+.social-links a:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .top-info-inner {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+/* =========================
+   BREAKING NEWS BAR
+========================= */
+
+.breaking-news {
+  background: #b60d0d;
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.breaking-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 16px;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.breaking-title {
+  background: #8f0a0a;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.breaking-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.breaking-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: breaking-scroll 18s linear infinite;
+}
+
+.breaking-marquee a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.breaking-marquee a:hover {
+  text-decoration: underline;
+}
+
+/* Pause on hover */
+.breaking-content:hover .breaking-marquee {
+  animation-play-state: paused;
+}
+
+@keyframes breaking-scroll {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .breaking-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
